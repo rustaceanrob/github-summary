@@ -499,6 +499,8 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "octocrab",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 

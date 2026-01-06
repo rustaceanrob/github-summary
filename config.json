@@ -1,0 +1,11 @@
+{
+	"username": "rustaceanrob",
+	"repositories": [
+		["bitcoin", "bitcoin"],
+		["rust-bitcoin", "rust-bitcoin"],
+		["2140-dev", "kyoto"],
+		["2140-dev", "bitcoin-p2p"],
+		["bitcoindevkit", "bdk-ffi"],
+		["rust-bitcoin", "bip324"]
+	]
+}
