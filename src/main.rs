@@ -1,5 +1,6 @@
 use chrono::{DateTime, Months, Utc};
 use octocrab::Octocrab;
+use ollama_rs::{Ollama, generation::completion::request::GenerationRequest};
 use serde::Deserialize;
 use std::{fs::File, io::BufReader, sync::Arc};
 
@@ -15,6 +16,14 @@ async fn main() {
     let file = File::open("./config.json").expect("could not find config.json");
     let buf_reader = BufReader::new(file);
     let query: Query = serde_json::from_reader(buf_reader).unwrap();
+    let ollama = Ollama::default();
+    let model = "gemma3:270m".to_string();
+    let prompt = "Why is the sky blue?".to_string();
+    let res = ollama
+        .generate(GenerationRequest::new(model, prompt))
+        .await
+        .unwrap();
+    println!("{}", res.response);
     print_green(format!(
         "Generating summary for {} beginning {}",
         query.username, quarter
