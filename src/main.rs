@@ -7,7 +7,9 @@ use std::{fs::File, io::BufReader, sync::Arc};
 #[derive(Deserialize, Debug)]
 struct Query {
     username: String,
+    description: String,
     repositories: Vec<(String, String)>,
+    model: String,
 }
 
 #[tokio::main]
@@ -17,13 +19,7 @@ async fn main() {
     let buf_reader = BufReader::new(file);
     let query: Query = serde_json::from_reader(buf_reader).unwrap();
     let ollama = Ollama::default();
-    let model = "gemma3:270m".to_string();
-    let prompt = "Why is the sky blue?".to_string();
-    let res = ollama
-        .generate(GenerationRequest::new(model, prompt))
-        .await
-        .unwrap();
-    println!("{}", res.response);
+    let mut prompt = build_context(&query);
     print_green(format!(
         "Generating summary for {} beginning {}",
         query.username, quarter
@@ -34,6 +30,7 @@ async fn main() {
         build_commit_summary(
             octocrab.clone(),
             quarter,
+            &mut prompt,
             query.username.clone(),
             owner.as_str(),
             repo.as_str(),
@@ -43,6 +40,7 @@ async fn main() {
         build_pr_summary(
             octocrab.clone(),
             quarter,
+            &mut prompt,
             query.username.clone(),
             owner.as_str(),
             repo.as_str(),
@@ -50,16 +48,31 @@ async fn main() {
         .await;
         println!(" ");
     }
+    let res = ollama
+        .generate(GenerationRequest::new(query.model.clone(), prompt))
+        .await
+        .unwrap();
+    println!("{}", res.response);
+}
+
+fn build_context(query: &Query) -> String {
+    format!(
+        "You are an assistant that generates quarterly reports for open source software developers. You will be given a list of commits, pull requests, and potentially more information to use in generating your report. Your job is to bolster the developer and create a cohesive theme for their work. Your response should be approximately one page. Here is a self-description of the developer: {}",
+        query.description
+    )
 }
 
 async fn build_commit_summary(
     octo: Arc<Octocrab>,
     quarter: DateTime<Utc>,
+    ctx: &mut String,
     username: String,
     owner: &str,
     repo: &str,
 ) {
-    print_green(format!("Merged commits summary for {owner}/{repo}"));
+    let summary_str = format!("Merged commits summary for {owner}/{repo}");
+    print_green(&summary_str);
+    ctx.push_str(&summary_str);
     let commits = octo
         .repos(owner, repo)
         .list_commits()
@@ -79,17 +92,21 @@ async fn build_commit_summary(
             continue;
         }
         println!("{first_line}");
+        ctx.push_str(&commit.commit.message);
     }
 }
 
 async fn build_pr_summary(
     octo: Arc<Octocrab>,
     quarter: DateTime<Utc>,
+    ctx: &mut String,
     username: String,
     owner: &str,
     repo: &str,
 ) {
-    print_green(format!("Open pull request summary for {owner}/{repo}"));
+    let summary_str = format!("Open pull request summary for {owner}/{repo}");
+    print_green(&summary_str);
+    ctx.push_str(&summary_str);
     let prs = octo
         .pulls(owner, repo)
         .list()
@@ -105,7 +122,12 @@ async fn build_pr_summary(
         .filter(|pr| pr.updated_at.unwrap() > quarter);
     for pr in filtered_on_user {
         if let Some(text) = pr.title {
-            println!("{text} #{}", pr.number);
+            let title_str = format!("{text} #{}", pr.number);
+            println!("{title_str}");
+            ctx.push_str(&title_str);
+        }
+        if let Some(body) = pr.body {
+            ctx.push_str(format!("PR description: {body}").as_str());
         }
         if let Some(comments) = pr.comments {
             println!("Comments {comments}");

@@ -1,5 +1,6 @@
 {
 	"username": "rustaceanrob",
+	"description": "Rob contributes to open source software related to Bitcoin and cryptography. He enjoys writing most programs in Rust, but he will also contribute to repositories written with C++, Python, or Swift.",
 	"repositories": [
 		["bitcoin", "bitcoin"],
 		["rust-bitcoin", "rust-bitcoin"],
@@ -7,6 +8,8 @@
 		["2140-dev", "swiftsync"],
 		["2140-dev", "bitcoin-p2p"],
 		["bitcoindevkit", "bdk-ffi"],
+		["bitcoindevkit", "bdk-kyoto"],
 		["rust-bitcoin", "bip324"]
-	]
+	],
+	"model": "gemma3:270m"
 }
