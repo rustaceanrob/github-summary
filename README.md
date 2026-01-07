@@ -1,8 +1,8 @@
 # GitHub Summary
 
-Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last month.
+Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last month. Each output first lists the merged commits and open PRs for a repo of reference, then attempts a short summary of the work for that repository.
 
-A few disclaimers: Small and locally run LLMs do not produce the highest quality or accurate results. The summary is best served as a starter template. Note that merged commits and open PRs will be listed in the log file, which may be useful standalone information. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries.
+A few disclaimers: Small and locally run LLMs do not produce the highest quality or accurate results. The summary is best served as a starter template. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries.
 
 # Getting Started
 
@@ -40,6 +40,7 @@ Almost ready to roll. Edit the `config.json` in the repository root. Change `use
 ```json
 {
 	"username": "rustaceanrob",
+	"name": "Robert",
 	"description": "Rob contributes to open source software related to Bitcoin and cryptography. He enjoys writing most programs in Rust, but he will also contribute to repositories written with C++, Python, or Swift.",
 	"repositories": [
 		["bitcoin", "bitcoin"],
@@ -63,7 +64,7 @@ just summarize
 
 The summary will be saved to `summary.out`.
 
-To wait for the result:
+To watch the result:
 ```bash
 tail -f summary.out
 ```
