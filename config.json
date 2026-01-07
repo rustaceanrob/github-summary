@@ -9,7 +9,8 @@
 		["2140-dev", "bitcoin-p2p"],
 		["bitcoindevkit", "bdk-ffi"],
 		["bitcoindevkit", "bdk-kyoto"],
+		["sedited", "kernel-node"],
 		["rust-bitcoin", "bip324"]
 	],
-	"model": "gemma3:270m"
+	"model": "deepseek-r1:14b"
 }
