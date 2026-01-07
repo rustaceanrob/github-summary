@@ -1,25 +1,69 @@
 # GitHub Summary
 
-Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last 3 months (quarter in corpo-speak).
+Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last month.
 
-This is a work in progress and does not do anything useful yet.
+A few disclaimers: Small and locally run LLMs do not produce the highest quality or accurate results. The summary is best served as a starter template. Note that merged commits and open PRs will be listed in the log file, which may be useful standalone information. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries.
 
 # Getting Started
 
-Edit the `config.json` in the repository root. Change `username` to your Github login name, _not_ your full name. For example, my `username` is `rustaceanrob`. Next, edit the list of tuples of the repository owner names and repositories. For example the `bitcoin` organization holds the `bitcoin` repository.
+This tool is mostly a combination of other tools. It uses `octocrab` to retrieve Github data, [`ollama`](https://ollama.com/) to build LLM based summaries locally, and [`just`](https://github.com/casey/just) to simplify CLI commands.
+
+After you've cloned the repo, you will have to [install ollama](https://ollama.com/download/linux) if you don't already have it. On Linux you can do so with an install script:
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+Some systems will not launch the `ollama` service automatically. Check if it is running with:
+```bash
+ollama --version
+```
+
+If that returns an error, launch the service locally:
+```bash
+systemctl start ollama.service
+```
+
+Now you may download your LLM of choice to your machine. The default for this repo is `deepseek-r1:14b`:
+```bash
+ollama run deepseek-r1:14b
+```
+
+After the download and saying hello to the model, close it:
+```bash
+/bye
+```
+
+If you do not have `just` on your machine, follow the steps [here](https://github.com/casey/just?tab=readme-ov-file#installation).
+
+Almost ready to roll. Edit the `config.json` in the repository root. Change `username` to your Github login name. For example, my `username` is `rustaceanrob`. Next, edit the list of tuples of the repository owner names and repositories. For example the `bitcoin` organization holds the `bitcoin` repository.
 
 ```json
 {
 	"username": "rustaceanrob",
+	"description": "Rob contributes to open source software related to Bitcoin and cryptography. He enjoys writing most programs in Rust, but he will also contribute to repositories written with C++, Python, or Swift.",
 	"repositories": [
 		["bitcoin", "bitcoin"],
 		["rust-bitcoin", "rust-bitcoin"],
 		["2140-dev", "kyoto"],
-	]
+		["2140-dev", "swiftsync"],
+		["2140-dev", "bitcoin-p2p"],
+		["bitcoindevkit", "bdk-ffi"],
+		["bitcoindevkit", "bdk-kyoto"],
+		["sedited", "kernel-node"],
+		["rust-bitcoin", "bip324"]
+	],
+	"model": "deepseek-r1:14b"
 }
 ```
 
-You may now fetch metadata on your activity:
+You may now fetch metadata on your activity and generate a summary:
 ```bash
-cargo run --release
+just summarize
+```
+
+The summary will be saved to `summary.out`.
+
+To wait for the result:
+```bash
+tail -f summary.out
 ```

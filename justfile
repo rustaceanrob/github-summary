@@ -1,2 +1,2 @@
 summarize:
-	cargo run --release > summary.out
+	nohup cargo run --release > summary.out &
