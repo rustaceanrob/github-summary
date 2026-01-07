@@ -8,6 +8,7 @@ use std::{fs::File, io::BufReader, sync::Arc};
 #[derive(Deserialize, Debug)]
 struct Query {
     username: String,
+    name: String,
     description: String,
     repositories: Vec<(String, String)>,
     model: String,
@@ -24,12 +25,10 @@ async fn main() {
         query.username, quarter
     ));
     println!(" ");
-    let initial_description = format!(
-        "Here is an initial description of the developer: {}\n",
-        query.description.clone()
-    );
+    let initial_description = format!("The developer's name is {}.\n", query.name.clone());
     let octocrab = octocrab::instance();
     for (owner, repo) in query.repositories.iter() {
+        println!("Summarizing {owner}/{repo}");
         let mut prompt = String::new();
         build_commit_summary(
             octocrab.clone(),
@@ -67,7 +66,7 @@ fn build_context(_query: &Query) -> String {
 
 async fn create_repo_summary(query: &Query, mut prompt: String, owner: &str, repo: &str) -> String {
     let prefix_string = format!(
-        "Use the above information for {owner}/{repo} to build a summary. Avoid preambles like 'here is a summary' and delve directly into the material.\n"
+        "Use the above information for {owner}/{repo} to build a summary. Avoid preambles like 'here is a summary' and delve directly into the material. Emphasize high-potential PRs and commits, along with useful review. Mention refactors, but do not over-state importance.\n"
     );
     prompt.push_str(&prefix_string);
     let ollama = Ollama::default();
@@ -78,7 +77,7 @@ async fn create_repo_summary(query: &Query, mut prompt: String, owner: &str, rep
     request = request.system(build_context(query));
     request = request.options(model_opts);
     let res = ollama.generate(request).await.unwrap();
-    println!("{}", res.response);
+    println!("{}\n", res.response);
     res.response
 }
 

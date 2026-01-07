@@ -1,5 +1,6 @@
 {
 	"username": "rustaceanrob",
+	"name": "Robert",
 	"description": "Rob contributes to open source software related to Bitcoin and cryptography. His goals are to help improve IBD efficiency within Bitcoin Core and to make light-clients more accessible to users.",
 	"repositories": [
 		["bitcoin", "bitcoin"],
