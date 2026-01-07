@@ -24,7 +24,10 @@ async fn main() {
         query.username, quarter
     ));
     println!(" ");
-    let mut final_report = String::new();
+    let initial_description = format!(
+        "Here is an initial description of the developer: {}\n",
+        query.description.clone()
+    );
     let octocrab = octocrab::instance();
     for (owner, repo) in query.repositories.iter() {
         let mut prompt = String::new();
@@ -49,15 +52,13 @@ async fn main() {
         .await;
         println!(" ");
         if !prompt.is_empty() {
+            let mut prefix = initial_description.clone();
+            prefix.push_str(&prompt);
             print_green("Generating your response. This may take a few minutes.");
-            let repo_summary =
-                create_repo_summary(&query, prompt, owner.as_str(), repo.as_str()).await;
-            final_report.push_str(&repo_summary);
+            create_repo_summary(&query, prefix, owner.as_str(), repo.as_str()).await;
         }
     }
     println!(" ");
-    println!("Final report:");
-    println!("{final_report}");
 }
 
 fn build_context(_query: &Query) -> String {
@@ -65,7 +66,9 @@ fn build_context(_query: &Query) -> String {
 }
 
 async fn create_repo_summary(query: &Query, mut prompt: String, owner: &str, repo: &str) -> String {
-    let prefix_string = format!("Use the above information for {owner}/{repo} to build a summary.");
+    let prefix_string = format!(
+        "Use the above information for {owner}/{repo} to build a summary. Avoid preambles like 'here is a summary' and delve directly into the material.\n"
+    );
     prompt.push_str(&prefix_string);
     let ollama = Ollama::default();
     let mut model_opts = ModelOptions::default();
@@ -87,9 +90,8 @@ async fn build_commit_summary(
     owner: &str,
     repo: &str,
 ) {
-    let summary_str = format!("Merged commits in {owner}/{repo}");
+    let summary_str = format!("Merged commits in {owner}/{repo}\n");
     print_green(&summary_str);
-
     let mut commits = octo
         .repos(owner, repo)
         .list_commits()
@@ -104,7 +106,7 @@ async fn build_commit_summary(
         return;
     } else {
         ctx.push_str(&summary_str);
-        ctx.push_str("These are commits that have been merged in the past month. Please summarize them and find relationships between them.");
+        ctx.push_str("These are commits that have been merged in the past month. Use their messages as context for the summary.");
     }
     for commit in commit_iter {
         let first_line = commit
@@ -117,7 +119,7 @@ async fn build_commit_summary(
             continue;
         }
         println!("{first_line}");
-        ctx.push_str(&commit.commit.message);
+        ctx.push_str(format!("{}\n", commit.commit.message).as_str());
     }
 }
 
@@ -129,7 +131,7 @@ async fn build_pr_summary(
     owner: &str,
     repo: &str,
 ) {
-    let summary_str = format!("Open pull requests for {owner}/{repo}");
+    let summary_str = format!("Open pull requests for {owner}/{repo}\n");
     print_green(&summary_str);
     let prs = octo
         .pulls(owner, repo)
@@ -156,10 +158,10 @@ async fn build_pr_summary(
         if let Some(text) = pr.title {
             let title_str = format!("{text} #{}", pr.number);
             println!("{title_str}");
-            ctx.push_str(format!("PR title and number: {title_str}").as_str());
+            ctx.push_str(format!("PR title and number: {title_str}\n").as_str());
         }
         if let Some(body) = pr.body {
-            ctx.push_str(format!("PR description: {body}").as_str());
+            ctx.push_str(format!("PR description: {body}\n").as_str());
         }
     }
 }

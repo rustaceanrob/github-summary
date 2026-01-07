@@ -23,9 +23,9 @@ If that returns an error, launch the service locally:
 systemctl start ollama.service
 ```
 
-Now you may download your LLM of choice to your machine. The default for this repo is `deepseek-r1:14b`:
+Now you may download your LLM of choice to your machine. The default for this repo is `llama3.2:3b`:
 ```bash
-ollama run deepseek-r1:14b
+ollama run llama3.2:3b
 ```
 
 After the download and saying hello to the model, close it:
