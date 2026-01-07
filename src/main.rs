@@ -1,9 +1,10 @@
 use chrono::{DateTime, Months, Utc};
 use octocrab::{Octocrab, models::pulls::PullRequest};
-use ollama_rs::{Ollama, generation::completion::request::GenerationRequest};
+use ollama_rs::{Ollama, generation::completion::request::GenerationRequest, models::ModelOptions};
 use serde::Deserialize;
 use std::{fs::File, io::BufReader, sync::Arc};
 
+#[allow(unused)]
 #[derive(Deserialize, Debug)]
 struct Query {
     username: String,
@@ -14,19 +15,19 @@ struct Query {
 
 #[tokio::main]
 async fn main() {
-    let quarter = Utc::now() - Months::new(1);
+    let quarter = Utc::now() - Months::new(3);
     let file = File::open("./config.json").expect("could not find config.json");
     let buf_reader = BufReader::new(file);
     let query: Query = serde_json::from_reader(buf_reader).unwrap();
-    let ollama = Ollama::default();
-    let mut prompt = String::new();
     print_green(format!(
         "Generating summary for {} beginning {}",
         query.username, quarter
     ));
     println!(" ");
+    let mut final_report = String::new();
     let octocrab = octocrab::instance();
     for (owner, repo) in query.repositories.iter() {
+        let mut prompt = String::new();
         build_commit_summary(
             octocrab.clone(),
             quarter,
@@ -47,21 +48,35 @@ async fn main() {
         )
         .await;
         println!(" ");
+        if !prompt.is_empty() {
+            print_green("Generating your response. This may take a few minutes.");
+            let repo_summary =
+                create_repo_summary(&query, prompt, owner.as_str(), repo.as_str()).await;
+            final_report.push_str(&repo_summary);
+        }
     }
     println!(" ");
-    print_green("Generating your response. This may take a few minutes.");
-    let mut request = GenerationRequest::new(query.model.clone(), prompt);
-    request = request.system(build_context(&query));
-    request = request.think(false);
-    let res = ollama.generate(request).await.unwrap();
-    println!("{}", res.response);
+    println!("Final report:");
+    println!("{final_report}");
 }
 
-fn build_context(query: &Query) -> String {
-    format!(
-        "You are an assistant that generates monthly reports for open source software developers. You will be given a list of commits, pull requests, and potentially more information to use in generating your report. Your job is to bolster the developer and create a cohesive theme for their work. Your response should be approximately one page. Here is a self-description of the developer: {}",
-        query.description
-    )
+fn build_context(_query: &Query) -> String {
+    "You are an assistant that generates quaterly reports for open source software developers. You will be given a list of commits, pull requests, and potentially more information about contributions to a repository. Your job is to bolster the developer and create a cohesive theme for their work. Your response should be approximately one paragraph. Be as concise as possible, the reader has limited time.".to_string()
+}
+
+async fn create_repo_summary(query: &Query, mut prompt: String, owner: &str, repo: &str) -> String {
+    let prefix_string = format!("Use the above information for {owner}/{repo} to build a summary.");
+    prompt.push_str(&prefix_string);
+    let ollama = Ollama::default();
+    let mut model_opts = ModelOptions::default();
+    model_opts = model_opts.repeat_penalty(1.5);
+    model_opts = model_opts.num_ctx(16384);
+    let mut request = GenerationRequest::new(query.model.clone(), prompt);
+    request = request.system(build_context(query));
+    request = request.options(model_opts);
+    let res = ollama.generate(request).await.unwrap();
+    println!("{}", res.response);
+    res.response
 }
 
 async fn build_commit_summary(
