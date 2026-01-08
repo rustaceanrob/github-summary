@@ -2,9 +2,18 @@
 
 Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last month. Each output first lists the merged commits and open PRs for a repo of reference, then optionally attempts a short summary of the work for that repository.
 
-A few disclaimers: Small and locally run LLMs do not produce sufficient quality or accurate results. The summary is best served as a starter template, if it is not complete bogus. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries.
+## Disclaimer
 
-# Getting Started
+Small and locally run LLMs do not produce sufficient quality or accurate results. The summary is best served as a starter template, if it is not complete bogus. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries, nor should they be used to evaluate a developer.
+
+# Quick Start
+
+If you have `just` and Rust installed, clone the repository and edit `config.json` with your information, then run:
+```bash
+just fetch && tail -f summary.out
+```
+
+# Installation
 
 This tool is mostly a combination of other tools. It uses `octocrab` to retrieve Github data, [`ollama`](https://ollama.com/) to build LLM based summaries locally, and [`just`](https://github.com/casey/just) to simplify CLI commands.
 
@@ -80,7 +89,7 @@ Almost ready to roll. Edit the `config.json` in the repository root. Change `use
 		["sedited", "kernel-node"],
 		["rust-bitcoin", "bip324"]
 	],
-	"model": "deepseek-r1:14b"
+	"model": "llama3.2:3b"
 }
 ```
 

@@ -24,7 +24,7 @@ async fn main() {
     let buf_reader = BufReader::new(file);
     let query: Query = serde_json::from_reader(buf_reader).unwrap();
     print_green(format!(
-        "Generating summary for {} beginning {}",
+        "Generating summary for {} beginning {} 🏃",
         query.username, quarter
     ));
     println!(" ");
@@ -61,7 +61,7 @@ async fn main() {
         }
     }
     println!(" ");
-    print_green("Done!");
+    print_green("Done! 🎉");
 }
 
 fn build_context(_query: &Query) -> String {
