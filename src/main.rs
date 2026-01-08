@@ -1,8 +1,11 @@
 use chrono::{DateTime, Months, Utc};
-use octocrab::{Octocrab, models::pulls::PullRequest};
+use octocrab::{
+    Octocrab,
+    models::pulls::{PullRequest, Review},
+};
 use ollama_rs::{Ollama, generation::completion::request::GenerationRequest, models::ModelOptions};
 use serde::Deserialize;
-use std::{fs::File, io::BufReader, sync::Arc};
+use std::{collections::HashSet, fs::File, io::BufReader, sync::Arc};
 
 #[allow(unused)]
 #[derive(Deserialize, Debug)]
@@ -47,6 +50,15 @@ async fn main() {
             octocrab.clone(),
             quarter,
             &mut prompt,
+            query.username.clone(),
+            owner.as_str(),
+            repo.as_str(),
+        )
+        .await;
+        println!(" ");
+        find_reviews(
+            octocrab.clone(),
+            quarter,
             query.username.clone(),
             owner.as_str(),
             repo.as_str(),
@@ -175,6 +187,80 @@ async fn build_pr_summary(
             }
             if let Some(body) = pr.body {
                 ctx.push_str(format!("PR description: {body}\n").as_str());
+            }
+        }
+    }
+}
+
+async fn find_reviews(
+    octo: Arc<Octocrab>,
+    quarter: DateTime<Utc>,
+    username: String,
+    owner: &str,
+    repo: &str,
+) {
+    let summary_str = format!("Reviews in {owner}/{repo}\n");
+    print_green(&summary_str);
+    for page in 1..5u32 {
+        let prs = octo
+            .pulls(owner, repo)
+            .list()
+            .per_page(100)
+            .page(page)
+            .send()
+            .await
+            .unwrap();
+        let filtered_on_quarter = prs
+            .into_iter()
+            .filter(|pr| pr.updated_at.is_some())
+            .filter(|pr| pr.updated_at.unwrap() > quarter)
+            .collect::<Vec<PullRequest>>();
+        if filtered_on_quarter.is_empty() {
+            if page == 1 {
+                println!("None since {quarter}");
+            }
+            return;
+        }
+        let mut total_reviews = 0;
+        let mut pr_urls: HashSet<String> = HashSet::new();
+        for pr in filtered_on_quarter {
+            for page in 1..5u32 {
+                let reviews = octo
+                    .pulls(owner, repo)
+                    .list_reviews(pr.number)
+                    .per_page(100)
+                    .page(page)
+                    .send()
+                    .await
+                    .unwrap();
+                let filtered_on_user = reviews
+                    .into_iter()
+                    .filter(|review| review.user.is_some())
+                    .filter(|review| review.user.as_ref().unwrap().login == username)
+                    .filter(|review| review.submitted_at.is_some())
+                    .filter(|review| review.submitted_at.unwrap() > quarter)
+                    .collect::<Vec<Review>>();
+                if filtered_on_user.is_empty() {
+                    if total_reviews == 0 {
+                        println!("None since {quarter}");
+                    } else {
+                        println!("You left {total_reviews} on {owner}/{repo}");
+                        let mut url_list = String::new();
+                        url_list.push_str("List of PR URLs: ");
+                        for url in pr_urls {
+                            url_list.push_str(url.as_str());
+                            url_list.push_str(", ");
+                        }
+                    }
+                    return;
+                }
+                for review in filtered_on_user {
+                    total_reviews += 1;
+                    if let Some(url) = review.pull_request_url {
+                        let url = url.to_string();
+                        pr_urls.insert(url);
+                    }
+                }
             }
         }
     }
