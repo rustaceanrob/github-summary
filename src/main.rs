@@ -31,7 +31,7 @@ async fn main() {
     let initial_description = format!("The developer's name is {}.\n", query.name.clone());
     let octocrab = octocrab::instance();
     for (owner, repo) in query.repositories.iter() {
-        println!("Summarizing {owner}/{repo}");
+        println!("Summarizing {owner}/{repo}\n");
         let mut prompt = String::new();
         build_commit_summary(
             octocrab.clone(),

@@ -1,12 +1,14 @@
 # GitHub Summary
 
-Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last month. Each output first lists the merged commits and open PRs for a repo of reference, then attempts a short summary of the work for that repository.
+Tracking open source work can be hard. This tool is intended to summarize PRs, reviews, and commits for a user on repositories of interest over the last month. Each output first lists the merged commits and open PRs for a repo of reference, then optionally attempts a short summary of the work for that repository.
 
-A few disclaimers: Small and locally run LLMs do not produce the highest quality or accurate results. The summary is best served as a starter template. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries.
+A few disclaimers: Small and locally run LLMs do not produce sufficient quality or accurate results. The summary is best served as a starter template, if it is not complete bogus. Secondly, a developer's worth and productivity cannot be measured with metrics. Number of commits and PRs are not used to generate summaries.
 
 # Getting Started
 
 This tool is mostly a combination of other tools. It uses `octocrab` to retrieve Github data, [`ollama`](https://ollama.com/) to build LLM based summaries locally, and [`just`](https://github.com/casey/just) to simplify CLI commands.
+
+## Install Rust
 
 Install Rust if you don't already have it:
 ```bash
@@ -44,7 +46,19 @@ After the download and saying hello to the model, close it:
 
 ## Install just
 
-If you do not have `just` on your machine, follow the steps [here](https://github.com/casey/just?tab=readme-ov-file#installation).
+If you do not have `just` on your machine, there are multiple ways to install.
+
+With Cargo:
+```bash
+cargo install just
+```
+
+Or you package manager of choice:
+```bash
+brew install just
+```
+
+For other installation methods, follow the steps [here](https://github.com/casey/just?tab=readme-ov-file#installation).
 
 ## Usage
 
