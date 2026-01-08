@@ -12,7 +12,6 @@ use std::{collections::HashSet, fs::File, io::BufReader, sync::Arc};
 struct Query {
     username: String,
     name: String,
-    description: String,
     repositories: Vec<(String, String)>,
     model: String,
 }

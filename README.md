@@ -77,7 +77,6 @@ Almost ready to roll. Edit the `config.json` in the repository root. Change `use
 {
 	"username": "rustaceanrob",
 	"name": "Robert",
-	"description": "Rob contributes to open source software related to Bitcoin and cryptography. He enjoys writing most programs in Rust, but he will also contribute to repositories written with C++, Python, or Swift.",
 	"repositories": [
 		["bitcoin", "bitcoin"],
 		["rust-bitcoin", "rust-bitcoin"],
