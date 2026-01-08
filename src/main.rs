@@ -16,6 +16,9 @@ struct Query {
 
 #[tokio::main]
 async fn main() {
+    let mut args = std::env::args();
+    args.next().unwrap();
+    let use_llm = args.next().is_none();
     let quarter = Utc::now() - Months::new(3);
     let file = File::open("./config.json").expect("could not find config.json");
     let buf_reader = BufReader::new(file);
@@ -50,7 +53,7 @@ async fn main() {
         )
         .await;
         println!(" ");
-        if !prompt.is_empty() {
+        if use_llm && !prompt.is_empty() {
             let mut prefix = initial_description.clone();
             prefix.push_str(&prompt);
             print_green("Generating your response. This may take a few minutes.");
@@ -58,6 +61,7 @@ async fn main() {
         }
     }
     println!(" ");
+    print_green("Done!");
 }
 
 fn build_context(_query: &Query) -> String {
@@ -91,34 +95,40 @@ async fn build_commit_summary(
 ) {
     let summary_str = format!("Merged commits in {owner}/{repo}\n");
     print_green(&summary_str);
-    let mut commits = octo
-        .repos(owner, repo)
-        .list_commits()
-        .since(quarter)
-        .author(username)
-        .send()
-        .await
-        .unwrap();
-    let commit_iter = commits.take_items();
-    if commit_iter.is_empty() {
-        println!("None since {quarter}");
-        return;
-    } else {
-        ctx.push_str(&summary_str);
-        ctx.push_str("These are commits that have been merged in the past month. Use their messages as context for the summary.");
-    }
-    for commit in commit_iter {
-        let first_line = commit
-            .commit
-            .message
-            .lines()
-            .next()
-            .expect("commit messages must be at least one line");
-        if first_line.contains("Merge ") {
-            continue;
+    for page in 1..5u32 {
+        let mut commits = octo
+            .repos(owner, repo)
+            .list_commits()
+            .per_page(100)
+            .page(page)
+            .since(quarter)
+            .author(&username)
+            .send()
+            .await
+            .unwrap();
+        let commit_iter = commits.take_items();
+        if commit_iter.is_empty() {
+            if page == 1 {
+                println!("None since {quarter}");
+            }
+            return;
+        } else if page == 1 {
+            ctx.push_str(&summary_str);
+            ctx.push_str("These are commits that have been merged in the past month. Use their messages as context for the summary.");
         }
-        println!("{first_line}");
-        ctx.push_str(format!("{}\n", commit.commit.message).as_str());
+        for commit in commit_iter {
+            let first_line = commit
+                .commit
+                .message
+                .lines()
+                .next()
+                .expect("commit messages must be at least one line");
+            if first_line.contains("Merge ") {
+                continue;
+            }
+            println!("{first_line}");
+            ctx.push_str(format!("{}\n", commit.commit.message).as_str());
+        }
     }
 }
 
@@ -132,35 +142,40 @@ async fn build_pr_summary(
 ) {
     let summary_str = format!("Open pull requests for {owner}/{repo}\n");
     print_green(&summary_str);
-    let prs = octo
-        .pulls(owner, repo)
-        .list()
-        .per_page(100)
-        .send()
-        .await
-        .unwrap();
-    let filtered_on_user = prs
-        .into_iter()
-        .filter(|pr| pr.user.is_some())
-        .filter(|pr| pr.user.clone().unwrap().login == username)
-        .filter(|pr| pr.updated_at.is_some())
-        .filter(|pr| pr.updated_at.unwrap() > quarter)
-        .collect::<Vec<PullRequest>>();
-    if filtered_on_user.is_empty() {
-        println!("None since {quarter}");
-        return;
-    } else {
-        ctx.push_str(&summary_str);
-        ctx.push_str("These are pull requests that were opened recently. Describe the changes from a high level.");
-    }
-    for pr in filtered_on_user {
-        if let Some(text) = pr.title {
-            let title_str = format!("{text} #{}", pr.number);
-            println!("{title_str}");
-            ctx.push_str(format!("PR title and number: {title_str}\n").as_str());
+    for page in 1..5u32 {
+        let prs = octo
+            .pulls(owner, repo)
+            .list()
+            .per_page(100)
+            .page(page)
+            .send()
+            .await
+            .unwrap();
+        let filtered_on_user = prs
+            .into_iter()
+            .filter(|pr| pr.user.is_some())
+            .filter(|pr| pr.user.clone().unwrap().login == username)
+            .filter(|pr| pr.updated_at.is_some())
+            .filter(|pr| pr.updated_at.unwrap() > quarter)
+            .collect::<Vec<PullRequest>>();
+        if filtered_on_user.is_empty() {
+            if page == 1 {
+                println!("None since {quarter}");
+            }
+            return;
+        } else if page == 1 {
+            ctx.push_str(&summary_str);
+            ctx.push_str("These are pull requests that were opened recently. Describe the changes from a high level.");
         }
-        if let Some(body) = pr.body {
-            ctx.push_str(format!("PR description: {body}\n").as_str());
+        for pr in filtered_on_user {
+            if let Some(text) = pr.title {
+                let title_str = format!("{text} #{}", pr.number);
+                println!("{title_str}");
+                ctx.push_str(format!("PR title and number: {title_str}\n").as_str());
+            }
+            if let Some(body) = pr.body {
+                ctx.push_str(format!("PR description: {body}\n").as_str());
+            }
         }
     }
 }

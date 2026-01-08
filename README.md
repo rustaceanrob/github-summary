@@ -8,6 +8,15 @@ A few disclaimers: Small and locally run LLMs do not produce the highest quality
 
 This tool is mostly a combination of other tools. It uses `octocrab` to retrieve Github data, [`ollama`](https://ollama.com/) to build LLM based summaries locally, and [`just`](https://github.com/casey/just) to simplify CLI commands.
 
+Install Rust if you don't already have it:
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+If you just want to see merged commits and PRs for the quarter, skip to the [install `just`](#install-just) step. 
+
+## Install `ollama`
+
 After you've cloned the repo, you will have to [install ollama](https://ollama.com/download/linux) if you don't already have it. On Linux you can do so with an install script:
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -33,7 +42,11 @@ After the download and saying hello to the model, close it:
 /bye
 ```
 
+## Install just
+
 If you do not have `just` on your machine, follow the steps [here](https://github.com/casey/just?tab=readme-ov-file#installation).
+
+## Usage
 
 Almost ready to roll. Edit the `config.json` in the repository root. Change `username` to your Github login name. For example, my `username` is `rustaceanrob`. Next, edit the list of tuples of the repository owner names and repositories. For example the `bitcoin` organization holds the `bitcoin` repository.
 
@@ -57,12 +70,16 @@ Almost ready to roll. Edit the `config.json` in the repository root. Change `use
 }
 ```
 
-You may now fetch metadata on your activity and generate a summary:
+To fetch all of your merged commits and opened PRs:
+```bash
+just fetch
+```
+The summary will be saved to `summary.out`.
+
+To generate an LLM summary for each repository:
 ```bash
 just summarize
 ```
-
-The summary will be saved to `summary.out`.
 
 To watch the result:
 ```bash
